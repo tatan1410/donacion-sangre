@@ -59,6 +59,10 @@ export default function Registro() {
   const fechaMinima = new Date(hoy.getFullYear() - 65, hoy.getMonth(), hoy.getDate())
     .toISOString().split('T')[0];
 
+  const edadOk = datos.fechaNacimiento >= fechaMinima && datos.fechaNacimiento <= fechaMaxima;
+  const pesoOk = parseFloat(datos.pesoKg) >= 50 && parseFloat(datos.pesoKg) <= 200;
+  const tieneUbicacion = datos.latitud !== null && datos.longitud !== null;
+
   // ─── Handler genérico ──────────────────────────────
   const actualizar = (campo, valor) => {
     setDatos({ ...datos, [campo]: valor });
@@ -90,20 +94,35 @@ export default function Registro() {
     );
   };
 
-  // ─── Validar pasos antes de avanzar ────────────────
-  const puedeAvanzarPaso1 = () =>
-    correoValido && passOk && passMatch;
+  // ─── Qué falta en cada paso (se muestra bajo el botón) ─
+  const faltantesPaso1 = [
+    !correoValido && 'un correo válido',
+    !passOk && 'una contraseña que cumpla los 4 requisitos',
+    !passMatch && 'confirmar la contraseña',
+  ].filter(Boolean);
 
-  const puedeAvanzarPaso2 = () =>
-    datos.numeroDocumento.length >= 5 &&
-    datos.nombre.trim().length >= 2 &&
-    datos.apellido.trim().length >= 2 &&
-    datos.celular.length === 10 &&
-    datos.fechaNacimiento &&
-    datos.genero;
+  const faltantesPaso2 = [
+    datos.numeroDocumento.length < 5 && 'número de documento (mínimo 5 dígitos)',
+    datos.nombre.trim().length < 2 && 'nombre',
+    datos.apellido.trim().length < 2 && 'apellido',
+    datos.celular.length !== 10 && 'celular de 10 dígitos',
+    !edadOk && 'fecha de nacimiento (entre 18 y 65 años)',
+    !datos.genero && 'género',
+  ].filter(Boolean);
 
-  const puedeRegistrar = () =>
-    datos.tipoSangre && datos.ciudad.trim().length >= 2 && datos.departamento.trim().length >= 2;
+  const faltantesPaso3 = [
+    !datos.tipoSangre && 'tipo de sangre',
+    !pesoOk && 'peso entre 50 y 200 kg',
+    datos.ciudad.trim().length < 2 && 'ciudad',
+    datos.departamento.trim().length < 2 && 'departamento',
+    !tieneUbicacion && 'detectar tu ubicación',
+  ].filter(Boolean);
+
+  const avisoFaltantes = (items) => items.length > 0 && (
+    <p className="text-[0.72rem] mt-2 text-[#f59e0b]">
+      Para continuar falta: {items.join(', ')}.
+    </p>
+  );
 
   // ─── Submit final ──────────────────────────────────
   const handleRegistro = async (e) => {
@@ -123,7 +142,12 @@ export default function Registro() {
       login(usuario, token);
       navigate('/home-donante');
     } catch (err) {
-      const msg = err.response?.data?.mensaje || 'Error al crear la cuenta';
+      // El backend devuelve "errores" (validación por campo) o "mensaje" (regla de negocio)
+      const data = err.response?.data;
+      const msg = data?.errores
+        ? Object.values(data.errores).join(' · ')
+        : data?.mensaje
+        || (err.response ? 'Error al crear la cuenta' : 'No se pudo conectar con el servidor. Intenta de nuevo.');
       setErrorGeneral(msg);
     } finally {
       setLoading(false);
@@ -293,8 +317,8 @@ export default function Registro() {
                             { ok: checks.numero, label: 'Un número' },
                             { ok: checks.especial, label: 'Un especial (!@#$)' }
                           ].map((check, i) => (
-                            <div key={i} className={`flex items-center gap-1.5 text-[0.7rem] transition-colors ${check.ok ? 'text-[#43e97b]' : 'text-[#52526a]'}`}>
-                              <span>{check.ok ? '✓' : '○'}</span>
+                            <div key={i} className={`flex items-center gap-1.5 text-[0.7rem] transition-colors ${check.ok ? 'text-[#43e97b]' : 'text-[#ff4d6d]'}`}>
+                              <span>{check.ok ? '✓' : '✗'}</span>
                               {check.label}
                             </div>
                           ))}
@@ -329,12 +353,13 @@ export default function Registro() {
 
                   <button
                     onClick={() => setPasoActual(2)}
-                    disabled={!puedeAvanzarPaso1()}
+                    disabled={faltantesPaso1.length > 0}
                     className="w-full py-3 rounded-[10px] text-sm font-extrabold tracking-[0.5px] text-white transition-all bg-gradient-to-r from-[#dc2626] to-[#b91c1c] shadow-lg shadow-[#dc2626]/30 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none mt-4"
                     style={{ fontFamily: "'Syne', sans-serif" }}
                   >
                     CONTINUAR →
                   </button>
+                  {avisoFaltantes(faltantesPaso1)}
 
                   <p className="text-center text-xs text-[#52526a] mt-4">
                     ¿Ya tienes cuenta? <a href="/login" className="text-[#dc2626] font-bold hover:underline">Iniciar sesión</a>
@@ -505,13 +530,14 @@ export default function Registro() {
                     </button>
                     <button
                       onClick={() => setPasoActual(3)}
-                      disabled={!puedeAvanzarPaso2()}
+                      disabled={faltantesPaso2.length > 0}
                       className="flex-1 py-3 rounded-[10px] text-sm font-extrabold tracking-[0.5px] text-white bg-gradient-to-r from-[#dc2626] to-[#b91c1c] shadow-lg shadow-[#dc2626]/30 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none transition-all"
                       style={{ fontFamily: "'Syne', sans-serif" }}
                     >
                       CONTINUAR →
                     </button>
                   </div>
+                  {avisoFaltantes(faltantesPaso2)}
                 </div>
               )}
 
@@ -561,7 +587,7 @@ export default function Registro() {
                           actualizar('pesoKg', valor);
                         }}
                         placeholder="70"
-                        min="40"
+                        min="50"
                         max="200"
                         className="w-full px-4 py-2.5 bg-[#08080f] border border-[#1e1e2e] rounded-[9px] text-[#e8e8f0] text-sm outline-none focus:border-[#dc2626] focus:ring-2 focus:ring-[#dc2626]/20 placeholder:text-[#2a2a3e]"
                       />
@@ -653,7 +679,7 @@ export default function Registro() {
                     </button>
                     <button
                       onClick={handleRegistro}
-                      disabled={!puedeRegistrar() || loading}
+                      disabled={faltantesPaso3.length > 0 || loading}
                       className="flex-1 py-3 rounded-[10px] text-sm font-extrabold tracking-[0.5px] text-white bg-gradient-to-r from-[#dc2626] to-[#b91c1c] shadow-lg shadow-[#dc2626]/30 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none transition-all flex items-center justify-center gap-2"
                       style={{ fontFamily: "'Syne', sans-serif" }}
                     >
@@ -670,6 +696,7 @@ export default function Registro() {
                       )}
                     </button>
                   </div>
+                  {avisoFaltantes(faltantesPaso3)}
                 </div>
               )}
             </div>

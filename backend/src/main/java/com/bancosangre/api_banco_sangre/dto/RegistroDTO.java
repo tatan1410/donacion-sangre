@@ -37,6 +37,8 @@ public class RegistroDTO {
 
     @NotBlank(message = "La contraseña es obligatoria")
     @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
+    @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*(),.?\":{}|<>]).*$",
+            message = "La contraseña debe tener al menos una mayúscula, un número y un carácter especial")
     private String contrasena;
 
     // ─── Datos Médicos Obligatorios ───────────────────────────────────

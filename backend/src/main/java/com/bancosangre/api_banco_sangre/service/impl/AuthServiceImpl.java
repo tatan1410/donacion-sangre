@@ -14,6 +14,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.Period;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -36,6 +39,12 @@ public class AuthServiceImpl implements AuthService {
         // 2. Validar que el documento no exista
         if (usuarioRepository.existsByNumeroDocumento(dto.getNumeroDocumento())) {
             throw new RuntimeException("El número de documento ya está registrado");
+        }
+
+        // 2.1 Validar edad para donar (18 a 65 años)
+        int edad = Period.between(dto.getFechaNacimiento(), LocalDate.now()).getYears();
+        if (edad < 18 || edad > 65) {
+            throw new RuntimeException("Debes tener entre 18 y 65 años para registrarte como donante");
         }
 
         // 3. Buscar el rol según rolId del DTO (default DONANTE si no viene)
