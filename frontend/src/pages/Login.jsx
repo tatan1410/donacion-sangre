@@ -193,9 +193,11 @@ export default function Login() {
                   />
                   <span className="text-[0.8rem] text-[#52526a]">Recordarme</span>
                 </label>
+                {/* Pendiente: habilitar cuando exista la función de recuperar contraseña
                 <a href="#" className="text-[0.78rem] text-[#dc2626] hover:opacity-70 transition-opacity no-underline">
                   ¿Olvidaste tu contraseña?
                 </a>
+                */}
               </div>
 
               {/* Botón Submit */}
