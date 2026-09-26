@@ -94,10 +94,17 @@ export default function SolicitudesBanco() {
     });
     setModalAbierto(true);
   };
-
+  // Fecha de hoy en hora local (no UTC)
+  const hoyLocal = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+    .toISOString().split('T')[0];
+  const fechaInvalida = form.fechaLimite && form.fechaLimite < hoyLocal;
   // ── Guardar ───────────────────────────────────────────────────────────────
   const guardar = async () => {
     if (!form.unidadesNecesarias) return;
+    if (fechaInvalida) {
+      mostrarMensaje('La fecha límite no puede ser anterior a hoy', 'error');
+      return;
+    }
     setGuardando(true);
     try {
       const payload = {
@@ -122,7 +129,9 @@ export default function SolicitudesBanco() {
       await recargarSolicitudes();
       setModalAbierto(false);
     } catch (err) {
-      mostrarMensaje(err.response?.data?.mensaje || 'Error al guardar', 'error');
+      const data = err.response?.data;
+      const msg = data?.errores ? Object.values(data.errores).join(' · ') : data?.mensaje || 'Error al guardar';
+      mostrarMensaje(msg, 'error');
     } finally {
       setGuardando(false);
     }
@@ -146,17 +155,17 @@ export default function SolicitudesBanco() {
 
   const colorBorde = { ALTA: 'border-l-[#ff4d6d]', MEDIA: 'border-l-[#f59e0b]', BAJA: 'border-l-[#43e97b]' };
   const colorEstado = {
-    ACTIVA:    'bg-[rgba(67,233,123,0.1)] text-[#43e97b] border-[#43e97b]/30',
-    COMPLETADA:'bg-[rgba(59,130,246,0.1)] text-[#60a5fa] border-[#60a5fa]/30',
+    ACTIVA: 'bg-[rgba(67,233,123,0.1)] text-[#43e97b] border-[#43e97b]/30',
+    COMPLETADA: 'bg-[rgba(59,130,246,0.1)] text-[#60a5fa] border-[#60a5fa]/30',
     CANCELADA: 'bg-[rgba(107,114,128,0.1)] text-[#9ca3af] border-[#9ca3af]/30',
-    VENCIDA:   'bg-[rgba(220,38,38,0.1)] text-[#dc2626] border-[#dc2626]/30',
+    VENCIDA: 'bg-[rgba(220,38,38,0.1)] text-[#dc2626] border-[#dc2626]/30',
   };
 
   if (loading) {
     return (
       <Layout>
         <div className="space-y-4">
-          {[1,2,3].map(i => <div key={i} className="h-28 bg-[#1e1e2e] rounded-2xl animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-28 bg-[#1e1e2e] rounded-2xl animate-pulse" />)}
         </div>
       </Layout>
     );
@@ -167,9 +176,8 @@ export default function SolicitudesBanco() {
 
       {/* Mensaje flash */}
       {mensaje && (
-        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl text-sm font-bold shadow-lg ${
-          mensaje.tipo === 'error' ? 'bg-[#dc2626] text-white' : 'bg-[#43e97b] text-[#08080f]'
-        }`}>
+    <div className={`fixed top-6 right-6 z-[100] px-5 py-3 rounded-xl text-sm font-bold shadow-lg ${mensaje.tipo === 'error' ? 'bg-[#dc2626] text-white' : 'bg-[#43e97b] text-[#08080f]'
+          }`}>
           {mensaje.texto}
         </div>
       )}
@@ -203,11 +211,10 @@ export default function SolicitudesBanco() {
           <button
             key={e}
             onClick={() => setFiltroEstado(e)}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
-              filtroEstado === e
-                ? 'bg-[#dc2626] border-[#dc2626] text-white'
-                : 'bg-transparent border-[#1e1e2e] text-[#52526a] hover:border-[#dc2626]/50'
-            }`}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${filtroEstado === e
+              ? 'bg-[#dc2626] border-[#dc2626] text-white'
+              : 'bg-transparent border-[#1e1e2e] text-[#52526a] hover:border-[#dc2626]/50'
+              }`}
             style={{ fontFamily: "'Syne', sans-serif" }}
           >
             {e}
@@ -332,11 +339,10 @@ export default function SolicitudesBanco() {
                       key={t}
                       type="button"
                       onClick={() => setForm({ ...form, tipoSangre: t })}
-                      className={`py-2 rounded-lg text-sm font-bold transition-all border-2 ${
-                        form.tipoSangre === t
-                          ? 'bg-gradient-to-br from-[#dc2626] to-[#991b1b] text-white border-[#dc2626]'
-                          : 'bg-[#08080f] text-[#e8e8f0] border-[#1e1e2e] hover:border-[#dc2626]/50'
-                      }`}
+                      className={`py-2 rounded-lg text-sm font-bold transition-all border-2 ${form.tipoSangre === t
+                        ? 'bg-gradient-to-br from-[#dc2626] to-[#991b1b] text-white border-[#dc2626]'
+                        : 'bg-[#08080f] text-[#e8e8f0] border-[#1e1e2e] hover:border-[#dc2626]/50'
+                        }`}
                     >
                       {t}
                     </button>
@@ -355,13 +361,12 @@ export default function SolicitudesBanco() {
                       key={u}
                       type="button"
                       onClick={() => setForm({ ...form, urgencia: u })}
-                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all border ${
-                        form.urgencia === u
-                          ? u === 'ALTA' ? 'bg-[#ff4d6d] border-[#ff4d6d] text-white'
-                            : u === 'MEDIA' ? 'bg-[#f59e0b] border-[#f59e0b] text-white'
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all border ${form.urgencia === u
+                        ? u === 'ALTA' ? 'bg-[#ff4d6d] border-[#ff4d6d] text-white'
+                          : u === 'MEDIA' ? 'bg-[#f59e0b] border-[#f59e0b] text-white'
                             : 'bg-[#43e97b] border-[#43e97b] text-[#08080f]'
-                          : 'bg-[#08080f] border-[#1e1e2e] text-[#52526a] hover:border-[#dc2626]/50'
-                      }`}
+                        : 'bg-[#08080f] border-[#1e1e2e] text-[#52526a] hover:border-[#dc2626]/50'
+                        }`}
                     >
                       {u}
                     </button>
@@ -429,9 +434,14 @@ export default function SolicitudesBanco() {
                   type="date"
                   value={form.fechaLimite}
                   onChange={e => setForm({ ...form, fechaLimite: e.target.value })}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2.5 bg-[#08080f] border border-[#1e1e2e] rounded-xl text-[#e8e8f0] text-sm outline-none focus:border-[#dc2626]"
+                  min={hoyLocal}
+                  className={`w-full px-4 py-2.5 bg-[#08080f] border rounded-xl text-[#e8e8f0] text-sm outline-none ${fechaInvalida ? 'border-[#ff4d6d] focus:border-[#ff4d6d]' : 'border-[#1e1e2e] focus:border-[#dc2626]'}`}
                 />
+                {fechaInvalida && (
+                  <p className="text-[0.7rem] mt-1.5 text-[#ff4d6d]">
+                    ✗ La fecha no puede ser anterior a hoy
+                  </p>
+                )}
               </div>
 
               {/* Radio búsqueda */}

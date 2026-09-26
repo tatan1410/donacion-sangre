@@ -29,6 +29,7 @@ public class SolicitudRequestDTO {
     @Size(max = 100, message = "La referencia del paciente no puede superar 100 caracteres")
     private String pacienteReferencia;
 
+    @FutureOrPresent(message = "La fecha límite no puede ser anterior a hoy")
     private LocalDate fechaLimite;
 
     private EstadoSolicitud estado;
