@@ -49,7 +49,4 @@ Base URL: `http://localhost:8081/api/v1`
 
 Documentación completa: `http://localhost:8081/swagger-ui/index.html`
 
-## 👥 Equipo
-
-- **Carlos Díaz** — Backend (Spring Boot, BD, lógica de negocio)
-- **Diego Manco** — Frontend (React, UI/UX, integración)    
+ 

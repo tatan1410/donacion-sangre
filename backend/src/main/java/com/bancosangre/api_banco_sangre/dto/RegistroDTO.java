@@ -33,6 +33,7 @@ public class RegistroDTO {
     private String correo;
 
     @NotBlank(message = "El celular es obligatorio")
+    @Pattern(regexp = "^3\\d{9}$", message = "El celular debe tener 10 dígitos y empezar por 3")
     private String celular;
 
     @NotBlank(message = "La contraseña es obligatoria")

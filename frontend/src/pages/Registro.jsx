@@ -94,11 +94,13 @@ export default function Registro() {
   const puedeAvanzarPaso1 = () =>
     correoValido && passOk && passMatch;
 
+  const celularValido = /^3\d{9}$/.test(datos.celular);
+
   const puedeAvanzarPaso2 = () =>
     datos.numeroDocumento.length >= 5 &&
     datos.nombre.trim().length >= 2 &&
     datos.apellido.trim().length >= 2 &&
-    datos.celular.length === 10 &&
+    celularValido &&
     datos.fechaNacimiento &&
     datos.genero;
 
@@ -237,10 +239,10 @@ export default function Registro() {
                       onChange={(e) => actualizar('correo', e.target.value)}
                       placeholder="tucorreo@ejemplo.com"
                       className={`w-full px-4 py-2.5 bg-[#08080f] border rounded-[9px] text-[#e8e8f0] text-sm outline-none focus:ring-2 transition-all placeholder:text-[#2a2a3e] ${datos.correo.length > 0 && !correoValido
-                          ? 'border-[#ff4d6d] focus:border-[#ff4d6d] focus:ring-[#ff4d6d]/20'
-                          : datos.correo.length > 0 && correoValido
-                            ? 'border-[#43e97b] focus:border-[#43e97b] focus:ring-[#43e97b]/20'
-                            : 'border-[#1e1e2e] focus:border-[#dc2626] focus:ring-[#dc2626]/20'
+                        ? 'border-[#ff4d6d] focus:border-[#ff4d6d] focus:ring-[#ff4d6d]/20'
+                        : datos.correo.length > 0 && correoValido
+                          ? 'border-[#43e97b] focus:border-[#43e97b] focus:ring-[#43e97b]/20'
+                          : 'border-[#1e1e2e] focus:border-[#dc2626] focus:ring-[#dc2626]/20'
                         }`}
                     />
                     {datos.correo.length > 0 && !correoValido && (
@@ -278,11 +280,11 @@ export default function Registro() {
                         <div className="flex gap-1 mb-2">
                           {[1, 2, 3, 4].map(n => (
                             <div key={n} className={`flex-1 h-1 rounded transition-all ${n <= fuerzaPass
-                                ? fuerzaPass === 1 ? 'bg-[#ff4d6d]'
-                                  : fuerzaPass === 2 ? 'bg-[#f59e0b]'
-                                    : fuerzaPass === 3 ? 'bg-[#43e97b]'
-                                      : 'bg-[#43e97b]'
-                                : 'bg-[#1e1e2e]'
+                              ? fuerzaPass === 1 ? 'bg-[#ff4d6d]'
+                                : fuerzaPass === 2 ? 'bg-[#f59e0b]'
+                                  : fuerzaPass === 3 ? 'bg-[#43e97b]'
+                                    : 'bg-[#43e97b]'
+                              : 'bg-[#1e1e2e]'
                               }`}></div>
                           ))}
                         </div>
@@ -384,10 +386,10 @@ export default function Registro() {
                         maxLength={15}
                         inputMode="numeric"
                         className={`w-full px-4 py-2.5 bg-[#08080f] border rounded-[9px] text-[#e8e8f0] text-sm outline-none focus:ring-2 transition-all placeholder:text-[#2a2a3e] ${datos.numeroDocumento.length > 0 && datos.numeroDocumento.length < 5
-                            ? 'border-[#ff4d6d] focus:border-[#ff4d6d] focus:ring-[#ff4d6d]/20'
-                            : datos.numeroDocumento.length >= 5
-                              ? 'border-[#43e97b] focus:border-[#43e97b] focus:ring-[#43e97b]/20'
-                              : 'border-[#1e1e2e] focus:border-[#dc2626] focus:ring-[#dc2626]/20'
+                          ? 'border-[#ff4d6d] focus:border-[#ff4d6d] focus:ring-[#ff4d6d]/20'
+                          : datos.numeroDocumento.length >= 5
+                            ? 'border-[#43e97b] focus:border-[#43e97b] focus:ring-[#43e97b]/20'
+                            : 'border-[#1e1e2e] focus:border-[#dc2626] focus:ring-[#dc2626]/20'
                           }`}
                       />
                       {datos.numeroDocumento.length > 0 && datos.numeroDocumento.length < 5 && (
@@ -444,14 +446,19 @@ export default function Registro() {
                       placeholder="3001234567"
                       maxLength={10}
                       inputMode="numeric"
-                      className={`w-full px-4 py-2.5 bg-[#08080f] border rounded-[9px] text-[#e8e8f0] text-sm outline-none focus:ring-2 transition-all placeholder:text-[#2a2a3e] ${datos.celular.length > 0 && datos.celular.length < 10
-                          ? 'border-[#ff4d6d] focus:border-[#ff4d6d] focus:ring-[#ff4d6d]/20'
-                          : datos.celular.length === 10
-                            ? 'border-[#43e97b] focus:border-[#43e97b] focus:ring-[#43e97b]/20'
-                            : 'border-[#1e1e2e] focus:border-[#dc2626] focus:ring-[#dc2626]/20'
+                      className={`w-full px-4 py-2.5 bg-[#08080f] border rounded-[9px] text-[#e8e8f0] text-sm outline-none focus:ring-2 transition-all placeholder:text-[#2a2a3e] ${datos.celular.length === 0
+                        ? 'border-[#1e1e2e] focus:border-[#dc2626] focus:ring-[#dc2626]/20'
+                        : celularValido
+                          ? 'border-[#43e97b] focus:border-[#43e97b] focus:ring-[#43e97b]/20'
+                          : 'border-[#ff4d6d] focus:border-[#ff4d6d] focus:ring-[#ff4d6d]/20'
                         }`}
                     />
-                    {datos.celular.length > 0 && datos.celular.length < 10 && (
+                    {datos.celular.length > 0 && !datos.celular.startsWith('3') && (
+                      <p className="text-[0.7rem] mt-1.5 text-[#ff4d6d]">
+                        ✗ El celular debe empezar por 3
+                      </p>
+                    )}
+                    {datos.celular.startsWith('3') && datos.celular.length < 10 && (
                       <p className="text-[0.7rem] mt-1.5 text-[#ff4d6d]">
                         ✗ Debe tener 10 dígitos ({datos.celular.length}/10)
                       </p>
@@ -538,8 +545,8 @@ export default function Registro() {
                           type="button"
                           onClick={() => actualizar('tipoSangre', tipo)}
                           className={`py-2.5 rounded-[9px] text-sm font-bold transition-all border-2 ${datos.tipoSangre === tipo
-                              ? 'bg-gradient-to-br from-[#dc2626] to-[#991b1b] text-white border-[#dc2626] shadow-lg shadow-[#dc2626]/30'
-                              : 'bg-[#08080f] text-[#e8e8f0] border-[#1e1e2e] hover:border-[#dc2626]/50'
+                            ? 'bg-gradient-to-br from-[#dc2626] to-[#991b1b] text-white border-[#dc2626] shadow-lg shadow-[#dc2626]/30'
+                            : 'bg-[#08080f] text-[#e8e8f0] border-[#1e1e2e] hover:border-[#dc2626]/50'
                             }`}
                           style={{ fontFamily: "'Syne', sans-serif" }}
                         >
@@ -600,8 +607,8 @@ export default function Registro() {
                   </div>
 
                   <div className={`p-4 rounded-[10px] border-2 transition-all ${ubicacionDetectada
-                      ? 'border-[#43e97b] bg-[rgba(67,233,123,0.05)]'
-                      : 'border-[#1e1e2e] bg-[#08080f]'
+                    ? 'border-[#43e97b] bg-[rgba(67,233,123,0.05)]'
+                    : 'border-[#1e1e2e] bg-[#08080f]'
                     }`}>
                     {ubicacionDetectada ? (
                       <div className="flex items-center gap-3">
