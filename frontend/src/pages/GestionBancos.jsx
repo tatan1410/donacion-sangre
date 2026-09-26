@@ -30,6 +30,99 @@ const ADMIN_VACIO = {
   departamento: '',
 };
 
+// ─── Validaciones del formulario de banco ──────────────────────────────
+const SOLO_LETRAS = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s.'-]+$/;
+
+const validarBanco = (f) => {
+  const e = {};
+  const nombre = f.nombre.trim();
+  if (!nombre) e.nombre = 'Obligatorio';
+  else if (nombre.length < 3) e.nombre = 'Mínimo 3 caracteres';
+
+  if (!f.nit) e.nit = 'Obligatorio';
+  else if (!/^\d{9}(-\d)?$/.test(f.nit)) e.nit = '9 dígitos + dígito de verificación opcional (900123456-7)';
+
+  const ciudad = f.ciudad.trim();
+  if (!ciudad) e.ciudad = 'Obligatorio';
+  else if (ciudad.length < 3 || !SOLO_LETRAS.test(ciudad)) e.ciudad = 'Solo letras, mínimo 3';
+
+  const depto = f.departamento.trim();
+  if (!depto) e.departamento = 'Obligatorio';
+  else if (depto.length < 4 || !SOLO_LETRAS.test(depto)) e.departamento = 'Solo letras, mínimo 4';
+
+  const dir = f.direccion.trim();
+  if (!dir) e.direccion = 'Obligatorio';
+  else if (dir.length < 8 || !/[A-Za-z]/.test(dir) || !/\d/.test(dir)) e.direccion = 'Dirección completa (ej: Calle 50 # 45-20)';
+
+  if (f.telefono && !/^(3\d{9}|60\d{8})$/.test(f.telefono))
+    e.telefono = 'Celular (3XXXXXXXXX) o fijo (60XXXXXXXX), 10 dígitos';
+
+  if (f.correo && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.correo)) e.correo = 'Correo inválido';
+
+  const lat = parseFloat(f.latitud);
+  if (f.latitud === '') e.latitud = 'Obligatorio';
+  else if (isNaN(lat) || lat < -4.3 || lat > 13.5) e.latitud = 'Fuera de Colombia (-4.3 a 13.5)';
+
+  const lon = parseFloat(f.longitud);
+  if (f.longitud === '') e.longitud = 'Obligatorio';
+  else if (isNaN(lon) || lon < -82 || lon > -66.8) e.longitud = 'Fuera de Colombia (-82 a -66.8)';
+
+  if (f.horarioApertura && f.horarioCierre && f.horarioCierre <= f.horarioApertura)
+    e.horarioCierre = 'Debe ser después de la apertura';
+
+  if (!f.adminId) e.adminId = 'Selecciona un administrador';
+  return e;
+};
+
+// ─── Validaciones del formulario de admin de banco ─────────────────────
+const DOCUMENTO = {
+  CC: { regex: /^\d{5,10}$/,          max: 10, msg: 'Cédula: solo números, entre 5 y 10 dígitos' },
+  CE: { regex: /^\d{6,10}$/,          max: 10, msg: 'Cédula de extranjería: solo números, entre 6 y 10 dígitos' },
+  PA: { regex: /^[A-Z0-9]{6,12}$/,    max: 12, msg: 'Pasaporte: letras y números, entre 6 y 12 caracteres' },
+};
+
+const checksContrasena = (c) => ({
+  largo: c.length >= 8,
+  mayuscula: /[A-Z]/.test(c),
+  numero: /\d/.test(c),
+  especial: /[!@#$%^&*(),.?":{}|<>]/.test(c),
+});
+
+const validarAdmin = (f) => {
+  const e = {};
+  const nombre = f.nombre.trim();
+  if (!nombre) e.nombre = 'Obligatorio';
+  else if (nombre.length < 2 || !SOLO_LETRAS.test(nombre)) e.nombre = 'Solo letras, mínimo 2';
+
+  const apellido = f.apellido.trim();
+  if (!apellido) e.apellido = 'Obligatorio';
+  else if (apellido.length < 2 || !SOLO_LETRAS.test(apellido)) e.apellido = 'Solo letras, mínimo 2';
+
+  if (!f.correo) e.correo = 'Obligatorio';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.correo)) e.correo = 'Correo inválido';
+
+  const doc = DOCUMENTO[f.tipoDocumento];
+  if (!f.numeroDocumento) e.numeroDocumento = 'Obligatorio';
+  else if (doc && !doc.regex.test(f.numeroDocumento)) e.numeroDocumento = doc.msg;
+
+  if (!f.celular) e.celular = 'Obligatorio';
+  else if (!/^3\d{9}$/.test(f.celular)) e.celular = '10 dígitos y empieza por 3';
+
+  const checks = checksContrasena(f.contrasena);
+  if (!f.contrasena) e.contrasena = 'Obligatoria';
+  else if (!Object.values(checks).every(Boolean)) e.contrasena = 'No cumple todos los requisitos';
+  
+
+  const ciudad = f.ciudad.trim();
+  if (!ciudad) e.ciudad = 'Obligatorio';
+  else if (ciudad.length < 3 || !SOLO_LETRAS.test(ciudad)) e.ciudad = 'Solo letras, mínimo 3';
+
+  const depto = f.departamento.trim();
+  if (!depto) e.departamento = 'Obligatorio';
+  else if (depto.length < 4 || !SOLO_LETRAS.test(depto)) e.departamento = 'Solo letras, mínimo 4';
+  return e;
+};
+
 export default function GestionBancos() {
   const [bancos, setBancos] = useState([]);
   const [admins, setAdmins] = useState([]);
@@ -41,11 +134,13 @@ export default function GestionBancos() {
   const [form, setForm] = useState(FORM_VACIO);
   const [guardando, setGuardando] = useState(false);
   const [errorForm, setErrorForm] = useState('');
+  const [intentoGuardar, setIntentoGuardar] = useState(false);
 
   const [modalAdmin, setModalAdmin] = useState(false);
   const [formAdmin, setFormAdmin] = useState(ADMIN_VACIO);
   const [guardandoAdmin, setGuardandoAdmin] = useState(false);
   const [errorAdmin, setErrorAdmin] = useState('');
+  const [intentoAdmin, setIntentoAdmin] = useState(false);
 
   const [filtroCiudad, setFiltroCiudad] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('TODOS');
@@ -84,6 +179,7 @@ export default function GestionBancos() {
     setModoEdicion(false);
     setEditandoId(null);
     setErrorForm('');
+    setIntentoGuardar(false);
     setModalAbierto(true);
   };
 
@@ -106,16 +202,21 @@ export default function GestionBancos() {
     setModoEdicion(true);
     setEditandoId(banco.id);
     setErrorForm('');
+    setIntentoGuardar(false);
     setModalAbierto(true);
   };
 
+  const erroresBanco = validarBanco(form);
+  // Muestra el error de un campo si ya tiene algo escrito o si intentaron guardar
+  const errBanco = (campo) =>
+    (intentoGuardar || String(form[campo] ?? '') !== '') ? erroresBanco[campo] : undefined;
+
   const guardar = async () => {
     setErrorForm('');
+    setIntentoGuardar(true);
 
-    if (!form.nombre || !form.nit || !form.direccion || !form.ciudad ||
-        !form.departamento || !form.adminId ||
-        form.latitud === '' || form.longitud === '') {
-      setErrorForm('Completa los campos obligatorios');
+    if (Object.keys(erroresBanco).length > 0) {
+      setErrorForm('Revisa los campos marcados en rojo');
       return;
     }
 
@@ -123,6 +224,12 @@ export default function GestionBancos() {
     try {
       const payload = {
         ...form,
+        nombre: form.nombre.trim(),
+        ciudad: form.ciudad.trim(),
+        departamento: form.departamento.trim(),
+        direccion: form.direccion.trim(),
+        telefono: form.telefono || null,
+        correo: form.correo || null,
         latitud: parseFloat(form.latitud),
         longitud: parseFloat(form.longitud),
         adminId: Number(form.adminId),
@@ -176,27 +283,33 @@ export default function GestionBancos() {
   const abrirModalAdmin = () => {
     setFormAdmin(ADMIN_VACIO);
     setErrorAdmin('');
+    setIntentoAdmin(false);
     setModalAdmin(true);
   };
 
+  const erroresAdmin = validarAdmin(formAdmin);
+  const errAdmin = (campo) =>
+    (intentoAdmin || String(formAdmin[campo] ?? '') !== '') ? erroresAdmin[campo] : undefined;
+  const checksPass = checksContrasena(formAdmin.contrasena);
+
   const guardarAdmin = async () => {
     setErrorAdmin('');
+    setIntentoAdmin(true);
 
-    if (!formAdmin.nombre || !formAdmin.apellido || !formAdmin.correo ||
-        !formAdmin.celular || !formAdmin.numeroDocumento || !formAdmin.contrasena ||
-        !formAdmin.ciudad || !formAdmin.departamento) {
-      setErrorAdmin('Completa todos los campos');
-      return;
-    }
-
-    if (formAdmin.contrasena.length < 8) {
-      setErrorAdmin('La contraseña debe tener al menos 8 caracteres');
+    if (Object.keys(erroresAdmin).length > 0) {
+      setErrorAdmin('Revisa los campos marcados en rojo');
       return;
     }
 
     setGuardandoAdmin(true);
     try {
-      const res = await usuarioService.crearAdminBanco(formAdmin);
+      const res = await usuarioService.crearAdminBanco({
+        ...formAdmin,
+        nombre: formAdmin.nombre.trim(),
+        apellido: formAdmin.apellido.trim(),
+        ciudad: formAdmin.ciudad.trim(),
+        departamento: formAdmin.departamento.trim(),
+      });
       await cargarAdmins();
       // Auto-seleccionar el admin recién creado en el form de banco
       setForm(f => ({ ...f, adminId: res.data.id }));
@@ -408,34 +521,50 @@ export default function GestionBancos() {
 
               {/* Grid 2 columnas */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Campo label="Nombre *" value={form.nombre}
+                <Campo label="Nombre *" value={form.nombre} maxLength={150}
+                       placeholder="Banco de Sangre Hospital San Vicente"
+                       error={errBanco('nombre')}
                        onChange={v => setForm({...form, nombre: v})} />
-                <Campo label="NIT *" value={form.nit}
-                       onChange={v => setForm({...form, nit: v})} />
-                <Campo label="Ciudad *" value={form.ciudad}
+                <Campo label="NIT *" value={form.nit} maxLength={11}
+                       placeholder="900123456-7" inputMode="numeric"
+                       error={errBanco('nit')}
+                       onChange={v => setForm({...form, nit: v.replace(/[^\d-]/g, '')})} />
+                <Campo label="Ciudad *" value={form.ciudad} maxLength={100}
+                       placeholder="Medellín"
+                       error={errBanco('ciudad')}
                        onChange={v => setForm({...form, ciudad: v})} />
-                <Campo label="Departamento *" value={form.departamento}
+                <Campo label="Departamento *" value={form.departamento} maxLength={100}
+                       placeholder="Antioquia"
+                       error={errBanco('departamento')}
                        onChange={v => setForm({...form, departamento: v})} />
               </div>
 
-              <Campo label="Dirección *" value={form.direccion}
+              <Campo label="Dirección *" value={form.direccion} maxLength={255}
+                     placeholder="Calle 64 # 51D-154"
+                     error={errBanco('direccion')}
                      onChange={v => setForm({...form, direccion: v})} />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Campo label="Teléfono" value={form.telefono}
-                       onChange={v => setForm({...form, telefono: v})} />
-                <Campo label="Correo" type="email" value={form.correo}
-                       onChange={v => setForm({...form, correo: v})} />
+                <Campo label="Teléfono" type="tel" value={form.telefono} maxLength={10}
+                       placeholder="6044441333" inputMode="numeric"
+                       error={errBanco('telefono')}
+                       onChange={v => setForm({...form, telefono: v.replace(/\D/g, '').slice(0, 10)})} />
+                <Campo label="Correo" type="email" value={form.correo} maxLength={150}
+                       placeholder="contacto@banco.org"
+                       error={errBanco('correo')}
+                       onChange={v => setForm({...form, correo: v.trim()})} />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Campo label="Latitud *" type="number" step="0.000001"
                        value={form.latitud}
                        placeholder="6.244203"
+                       error={errBanco('latitud')}
                        onChange={v => setForm({...form, latitud: v})} />
                 <Campo label="Longitud *" type="number" step="0.000001"
                        value={form.longitud}
                        placeholder="-75.581211"
+                       error={errBanco('longitud')}
                        onChange={v => setForm({...form, longitud: v})} />
               </div>
 
@@ -445,6 +574,7 @@ export default function GestionBancos() {
                        onChange={v => setForm({...form, horarioApertura: v})} />
                 <Campo label="Hora cierre" type="time"
                        value={form.horarioCierre}
+                       error={errBanco('horarioCierre')}
                        onChange={v => setForm({...form, horarioCierre: v})} />
               </div>
 
@@ -458,7 +588,7 @@ export default function GestionBancos() {
                   <select
                     value={form.adminId}
                     onChange={(e) => setForm({...form, adminId: e.target.value})}
-                    className="flex-1 px-3 py-2.5 bg-[#08080f] border border-[#1e1e2e] rounded-lg text-[#e8e8f0] text-sm outline-none focus:border-[#dc2626]"
+                    className={`flex-1 px-3 py-2.5 bg-[#08080f] border rounded-lg text-[#e8e8f0] text-sm outline-none focus:border-[#dc2626] ${errBanco('adminId') ? 'border-[#ff4d6d]' : 'border-[#1e1e2e]'}`}
                   >
                     <option value="">— Selecciona un admin —</option>
                     {admins.map(a => (
@@ -540,14 +670,20 @@ export default function GestionBancos() {
               )}
 
               <div className="grid grid-cols-2 gap-4">
-                <Campo label="Nombre *" value={formAdmin.nombre}
+                <Campo label="Nombre *" value={formAdmin.nombre} maxLength={60}
+                       placeholder="Laura"
+                       error={errAdmin('nombre')}
                        onChange={v => setFormAdmin({...formAdmin, nombre: v})} />
-                <Campo label="Apellido *" value={formAdmin.apellido}
+                <Campo label="Apellido *" value={formAdmin.apellido} maxLength={60}
+                       placeholder="Gómez"
+                       error={errAdmin('apellido')}
                        onChange={v => setFormAdmin({...formAdmin, apellido: v})} />
               </div>
 
-              <Campo label="Correo *" type="email" value={formAdmin.correo}
-                     onChange={v => setFormAdmin({...formAdmin, correo: v})} />
+              <Campo label="Correo *" type="email" value={formAdmin.correo} maxLength={150}
+                     placeholder="admin@banco.org"
+                     error={errAdmin('correo')}
+                     onChange={v => setFormAdmin({...formAdmin, correo: v.trim()})} />
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -557,30 +693,57 @@ export default function GestionBancos() {
                   </label>
                   <select
                     value={formAdmin.tipoDocumento}
-                    onChange={(e) => setFormAdmin({...formAdmin, tipoDocumento: e.target.value})}
+                    onChange={(e) => setFormAdmin({...formAdmin, tipoDocumento: e.target.value, numeroDocumento: ''})}
                     className="w-full px-3 py-2.5 bg-[#08080f] border border-[#1e1e2e] rounded-lg text-[#e8e8f0] text-sm outline-none focus:border-[#dc2626]"
                   >
-                    <option value="CC">CC</option>
-                    <option value="CE">CE</option>
-                    <option value="TI">TI</option>
-                    <option value="PA">PA</option>
+                    <option value="CC">CC · Cédula</option>
+                    <option value="CE">CE · Extranjería</option>
+                    <option value="PA">PA · Pasaporte</option>
                   </select>
                 </div>
                 <Campo label="Número doc *" value={formAdmin.numeroDocumento}
-                       onChange={v => setFormAdmin({...formAdmin, numeroDocumento: v})} />
+                       maxLength={DOCUMENTO[formAdmin.tipoDocumento].max}
+                       inputMode={formAdmin.tipoDocumento === 'PA' ? 'text' : 'numeric'}
+                       placeholder={formAdmin.tipoDocumento === 'PA' ? 'AB123456' : '1036123456'}
+                       error={errAdmin('numeroDocumento')}
+                       onChange={v => setFormAdmin({...formAdmin, numeroDocumento:
+                         formAdmin.tipoDocumento === 'PA'
+                           ? v.toUpperCase().replace(/[^A-Z0-9]/g, '')
+                           : v.replace(/\D/g, '')})} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Campo label="Celular *" value={formAdmin.celular}
-                       onChange={v => setFormAdmin({...formAdmin, celular: v})} />
-                <Campo label="Contraseña * (min 8)" type="password" value={formAdmin.contrasena}
-                       onChange={v => setFormAdmin({...formAdmin, contrasena: v})} />
+                <Campo label="Celular *" type="tel" value={formAdmin.celular} maxLength={10}
+                       placeholder="3001234567" inputMode="numeric"
+                       error={errAdmin('celular')}
+                       onChange={v => setFormAdmin({...formAdmin, celular: v.replace(/\D/g, '').slice(0, 10)})} />
+                <div>
+                  <Campo label="Contraseña *" type="password" value={formAdmin.contrasena} maxLength={64}
+                         error={errAdmin('contrasena')}
+                         onChange={v => setFormAdmin({...formAdmin, contrasena: v})} />
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 mt-1">
+                    {[
+                      { ok: checksPass.largo, label: 'Mín. 8 caracteres' },
+                      { ok: checksPass.mayuscula, label: 'Una mayúscula' },
+                      { ok: checksPass.numero, label: 'Un número' },
+                      { ok: checksPass.especial, label: 'Un especial (!@#$)' },
+                    ].map(c => (
+                      <p key={c.label} className={`text-[0.68rem] transition-colors ${c.ok ? 'text-[#43e97b]' : 'text-[#ff4d6d]'}`}>
+                        {c.ok ? '✓' : '✗'} {c.label}
+                      </p>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Campo label="Ciudad *" value={formAdmin.ciudad}
+                <Campo label="Ciudad *" value={formAdmin.ciudad} maxLength={100}
+                       placeholder="Medellín"
+                       error={errAdmin('ciudad')}
                        onChange={v => setFormAdmin({...formAdmin, ciudad: v})} />
-                <Campo label="Departamento *" value={formAdmin.departamento}
+                <Campo label="Departamento *" value={formAdmin.departamento} maxLength={100}
+                       placeholder="Antioquia"
+                       error={errAdmin('departamento')}
                        onChange={v => setFormAdmin({...formAdmin, departamento: v})} />
               </div>
             </div>
@@ -609,7 +772,10 @@ export default function GestionBancos() {
 }
 
 // ─── Componente Campo reutilizable ─────────────────────────────────────
-function Campo({ label, value, onChange, type = 'text', step, placeholder }) {
+function Campo({ label, value, onChange, type = 'text', step, placeholder, error, maxLength, inputMode }) {
+  const largo = String(value ?? '').length;
+  const cercaDelLimite = maxLength && largo >= maxLength * 0.9;
+
   return (
     <div>
       <label className="block text-[0.68rem] font-bold uppercase tracking-[1px] text-[#52526a] mb-1.5"
@@ -621,9 +787,19 @@ function Campo({ label, value, onChange, type = 'text', step, placeholder }) {
         step={step}
         value={value}
         placeholder={placeholder}
+        maxLength={maxLength}
+        inputMode={inputMode}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2.5 bg-[#08080f] border border-[#1e1e2e] rounded-lg text-[#e8e8f0] text-sm outline-none focus:border-[#dc2626] placeholder:text-[#2a2a3e]"
+        className={`w-full px-3 py-2.5 bg-[#08080f] border rounded-lg text-[#e8e8f0] text-sm outline-none placeholder:text-[#2a2a3e] ${error ? 'border-[#ff4d6d] focus:border-[#ff4d6d]' : 'border-[#1e1e2e] focus:border-[#dc2626]'}`}
       />
+      <div className="flex justify-between gap-2 mt-1">
+        <p className="text-[0.7rem] text-[#ff4d6d]">{error ? `✗ ${error}` : ''}</p>
+        {maxLength && largo > 0 && (
+          <p className={`text-[0.7rem] shrink-0 ${cercaDelLimite ? 'text-[#f59e0b]' : 'text-[#52526a]'}`}>
+            {largo}/{maxLength}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
