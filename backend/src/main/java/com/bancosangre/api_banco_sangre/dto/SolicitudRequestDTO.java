@@ -23,10 +23,10 @@ public class SolicitudRequestDTO {
     @NotNull(message = "La urgencia es obligatoria")
     private Urgencia urgencia;
 
-    @Size(max = 500)
+    @Size(max = 500, message = "El motivo no puede superar 500 caracteres")
     private String motivo;
 
-    @Size(max = 100)
+    @Size(max = 100, message = "La referencia del paciente no puede superar 100 caracteres")
     private String pacienteReferencia;
 
     private LocalDate fechaLimite;

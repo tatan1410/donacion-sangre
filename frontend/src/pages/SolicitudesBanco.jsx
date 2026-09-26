@@ -394,8 +394,12 @@ export default function SolicitudesBanco() {
                   onChange={e => setForm({ ...form, motivo: e.target.value })}
                   placeholder="Ej: Paciente en cirugía de emergencia"
                   rows={2}
+                  maxLength={500}
                   className="w-full px-4 py-2.5 bg-[#08080f] border border-[#1e1e2e] rounded-xl text-[#e8e8f0] text-sm outline-none focus:border-[#dc2626] resize-none"
                 />
+                <p className={`text-[0.7rem] mt-1 text-right ${form.motivo.length >= 450 ? 'text-[#f59e0b]' : 'text-[#52526a]'}`}>
+                  {form.motivo.length}/500
+                </p>
               </div>
 
               {/* Paciente referencia */}
@@ -408,8 +412,12 @@ export default function SolicitudesBanco() {
                   value={form.pacienteReferencia}
                   onChange={e => setForm({ ...form, pacienteReferencia: e.target.value })}
                   placeholder="Anónimo"
+                  maxLength={100}
                   className="w-full px-4 py-2.5 bg-[#08080f] border border-[#1e1e2e] rounded-xl text-[#e8e8f0] text-sm outline-none focus:border-[#dc2626]"
                 />
+                <p className={`text-[0.7rem] mt-1 text-right ${form.pacienteReferencia.length >= 90 ? 'text-[#f59e0b]' : 'text-[#52526a]'}`}>
+                  {form.pacienteReferencia.length}/100
+                </p>
               </div>
 
               {/* Fecha límite */}
